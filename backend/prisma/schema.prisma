@@ -1,0 +1,168 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  role      String   @default("admin")
+  
+  creditors Creditor[]
+  loans     Loan[]
+  payments  Payment[]
+  activityLogs ActivityLog[]
+  notifications Notification[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+}
+
+model Creditor {
+  id           String   @id @default(cuid())
+  firstName    String
+  middleName   String?
+  lastName     String
+  contactNumber String?
+  email        String?
+  address      String?
+  notes        String?
+  status       String   @default("active")
+  
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  loans        Loan[]
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  deletedAt    DateTime?
+  
+  @@index([userId])
+  @@index([status])
+}
+
+model Loan {
+  id              String   @id @default(cuid())
+  loanNumber      String   @unique
+  principal       Decimal  @db.Decimal(12, 2)
+  interestPerDay  Decimal  @db.Decimal(5, 2)
+  termDays        Int
+  releaseDate     DateTime
+  dueDate         DateTime
+  
+  dailyInterest   Decimal  @db.Decimal(12, 2)
+  totalInterest   Decimal  @db.Decimal(12, 2)
+  totalPayable    Decimal  @db.Decimal(12, 2)
+  paidAmount      Decimal  @db.Decimal(12, 2) @default(0)
+  remainingBalance Decimal @db.Decimal(12, 2)
+  
+  status          String   @default("active")
+  
+  creditorId      String
+  creditor        Creditor @relation(fields: [creditorId], references: [id], onDelete: Cascade)
+  
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  payments        Payment[]
+  notifications   Notification[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  completedAt     DateTime?
+  deletedAt       DateTime?
+  
+  @@index([creditorId])
+  @@index([userId])
+  @@index([status])
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  paymentNumber   String   @unique @default(cuid())
+  amount          Decimal  @db.Decimal(12, 2)
+  paymentDate     DateTime
+  paymentMethod   String
+  referenceNumber String?
+  notes           String?
+  
+  loanId          String
+  loan            Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+  
+  @@index([loanId])
+  @@index([userId])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  module    String
+  action    String
+  details   String?
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  type        String   // "due_soon", "due_today", "release_date"
+  title       String
+  description String
+  loanId      String
+  loan        Loan     @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  isRead      Boolean  @default(false)
+  readAt      DateTime?
+  triggerDate DateTime // Date when this notification should trigger
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+  
+  @@index([userId])
+  @@index([loanId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@index([triggerDate])
+}
+
+model SystemSetting {
+  id                String   @id
+  businessName      String
+  tagline           String
+  heroTitle         String
+  heroSubtitle      String
+  ctaText           String
+  loanMinimum       Int
+  loanMaximum       Int
+  dailyInterestRate Decimal  @db.Decimal(5, 2)
+  contactEmail      String
+  contactPhone      String
+  contactAddress    String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}

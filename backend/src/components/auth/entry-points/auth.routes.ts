@@ -1,0 +1,15 @@
+import { Router } from 'express';
+import { login, refresh, logout, validate } from './auth.controller';
+import { authMiddleware } from '../../../shared/middleware/auth.middleware';
+
+const router = Router();
+
+// Public routes
+router.post('/login', login);
+router.post('/refresh', refresh);
+router.post('/logout', logout);
+
+// Protected routes
+router.get('/validate', authMiddleware, validate);
+
+export default router;

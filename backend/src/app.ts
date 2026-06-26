@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import path from 'path';
 import 'dotenv/config';
 
 import authRoutes from './components/auth/entry-points/auth.routes';
@@ -40,6 +41,15 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/collections', collectionsRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/notifications', notificationRoutes);
+
+// Serve frontend static files (for production/monorepo)
+const frontendDistPath = path.join(__dirname, '../../frontend/dist');
+app.use(express.static(frontendDistPath));
+
+// Catch-all route for SPA - serves index.html for all non-API routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(frontendDistPath, 'index.html'));
+});
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

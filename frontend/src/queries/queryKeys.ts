@@ -26,6 +26,9 @@ export const queryKeys = {
     all: [...baseKeys.query, 'dashboard'] as const,
     summary: () => [...baseKeys.query, 'dashboard', 'summary'] as const,
   },
+  collections: {
+    all: [...baseKeys.query, 'collections'] as const,
+  },
   settings: {
     all: [...baseKeys.query, 'settings'] as const,
     public: () => [...baseKeys.query, 'settings', 'public'] as const,

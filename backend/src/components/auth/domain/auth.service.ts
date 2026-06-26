@@ -78,6 +78,29 @@ export class AuthService {
   validateToken(token: string): JwtPayload {
     return jwtService.verify(token);
   }
+
+  /**
+   * Update user profile
+   */
+  async updateProfile(userId: string, data: { username?: string; password?: string }): Promise<any> {
+    // Check if username is already taken
+    if (data.username) {
+      const existingUser = await authRepository.findUserByUsername(data.username);
+      if (existingUser && existingUser.id !== userId) {
+        throw new ApiError(400, 'Username already taken');
+      }
+    }
+
+    // Hash new password if provided
+    const updateData: any = {};
+    if (data.username) updateData.username = data.username;
+    if (data.password) {
+      updateData.password = await passwordService.hash(data.password);
+    }
+
+    const updatedUser = await authRepository.updateUser(userId, updateData);
+    return updatedUser;
+  }
 }
 
 export const authService = new AuthService();

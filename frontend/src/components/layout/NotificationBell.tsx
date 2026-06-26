@@ -9,7 +9,8 @@ interface NotificationBellProps {
 
 export function NotificationBell({ onBellClick }: NotificationBellProps) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const { data: unreadCount = 0 } = useUnreadCountQuery(isAuthenticated);
+  const hasToken = !!localStorage.getItem('accessToken');
+  const { data: unreadCount = 0 } = useUnreadCountQuery(isAuthenticated && hasToken);
   const [isAnimating, setIsAnimating] = useState(false);
   const prevCountRef = useRef(unreadCount);
 

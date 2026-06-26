@@ -33,7 +33,8 @@ interface NotificationItem {
 
 export function NotificationModal({ isOpen, onClose }: NotificationModalProps) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const { data: notifications = [] } = useNotificationsQuery(isAuthenticated);
+  const hasToken = !!localStorage.getItem('accessToken');
+  const { data: notifications = [] } = useNotificationsQuery(isAuthenticated && hasToken);
   const markAsReadMutation = useMarkNotificationAsReadMutation();
   const markAllAsReadMutation = useMarkAllNotificationsAsReadMutation();
   const deleteNotificationMutation = useDeleteNotificationMutation();
@@ -102,6 +103,10 @@ export function NotificationModal({ isOpen, onClose }: NotificationModalProps) {
                             ? 'bg-yellow-500'
                             : notification.type === 'due_1day'
                               ? 'bg-orange-500'
+                              : notification.type === 'due_today'
+                                ? 'bg-red-500'
+                                : notification.type === 'due_1day_after'
+                                  ? 'bg-rose-700'
                               : 'bg-red-500'
                       }`}
                     />

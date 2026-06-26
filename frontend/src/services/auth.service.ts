@@ -21,4 +21,9 @@ export const authService = {
     const response = await api.get('/api/auth/validate');
     return response.data;
   },
+
+  updateProfile: async (data: { username?: string; password?: string }) => {
+    const response = await api.put('/api/auth/profile', data);
+    return response.data;
+  },
 };

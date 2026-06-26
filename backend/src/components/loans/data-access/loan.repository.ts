@@ -79,8 +79,10 @@ export class LoanRepository {
   }
 
   async getNextLoanSequence(userId: string): Promise<number> {
+    // Get all loan numbers for this user (including deleted ones)
+    // This prevents reusing loan numbers from deleted loans
     const loans = await prisma.loan.findMany({
-      where: { userId, deletedAt: null },
+      where: { userId },
       select: { loanNumber: true },
     });
 
@@ -91,8 +93,11 @@ export class LoanRepository {
     let maxSequence = 0;
 
     for (const loan of loans) {
-      const match = loan.loanNumber.match(/^loan-(\d+)$/i);
+      // Extract the last number segment (the actual sequence)
+      // This handles: LOAN-001, LOAN-002, etc.
+      const match = loan.loanNumber.match(/-(\d+)$/);
       if (!match?.[1]) continue;
+      
       const sequence = parseInt(match[1], 10);
       if (Number.isFinite(sequence) && sequence > maxSequence) {
         maxSequence = sequence;

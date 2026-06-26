@@ -1,5 +1,5 @@
 export interface CreateNotificationDTO {
-  type: 'release_date' | 'due_1week' | 'due_1day' | 'due_today';
+  type: 'release_date' | 'due_1week' | 'due_1day' | 'due_today' | 'due_1day_after';
   loanId: string;
   userId: string;
 }

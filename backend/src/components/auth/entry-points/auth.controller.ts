@@ -62,3 +62,27 @@ export const validate = asyncHandler(async (req: Request, res: Response) => {
     user: req.user,
   });
 });
+
+export const updateProfile = asyncHandler(async (req: Request, res: Response) => {
+  const { username, password } = req.body;
+  const userId = req.user?.userId;
+
+  if (!userId) {
+    return res.status(401).json({
+      error: 'Unauthorized',
+    });
+  }
+
+  if (!username && !password) {
+    return res.status(400).json({
+      error: 'At least one field (username or password) is required',
+    });
+  }
+
+  const updatedUser = await authService.updateProfile(userId, { username, password });
+
+  res.json({
+    message: 'Profile updated successfully',
+    user: updatedUser,
+  });
+});

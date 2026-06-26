@@ -2,6 +2,43 @@ import { prisma } from '../../shared/utils/prisma.client';
 import { appCache, cacheKeys } from '../../shared/utils/cache';
 
 export class DashboardService {
+  private getDefaultSummary() {
+    return {
+      stats: {
+        totalCreditors: 0,
+        activeLoans: 0,
+        totalReleased: 0,
+        totalCollections: 0,
+        totalPayables: 0,
+        profit: 0,
+        overdueLoans: 0,
+        dueTodayLoans: 0,
+      },
+      collections: {
+        dueToday: {
+          count: 0,
+          totalAmount: 0,
+        },
+        dueThisWeek: {
+          count: 0,
+          totalAmount: 0,
+        },
+        overdue: {
+          count: 0,
+          totalAmount: 0,
+        },
+      },
+      loanDistribution: {} as Record<string, number>,
+      recentActivities: [] as Array<{
+        type: string;
+        description: string;
+        creditorName: string;
+        timestamp: Date;
+      }>,
+      unavailable: true,
+    };
+  }
+
   async getSummary(userId: string) {
     const cacheKey = cacheKeys.dashboardSummary(userId);
     const cached = appCache.get<unknown>(cacheKey);
@@ -21,21 +58,22 @@ export class DashboardService {
     const nextWeek = new Date(startOfToday);
     nextWeek.setDate(nextWeek.getDate() + 7);
 
-    // Batch summary reads into a single Prisma transaction to reduce pool pressure.
-    const [
-      totalCreditors,
-      activeLoans,
-      totalReleased,
-      totalCollections,
-      totalPayables,
-      overdueLoans,
-      dueTodayLoans,
-      dueTodayAmount,
-      dueThisWeekAmount,
-      overdueAmount,
-      recentActivities,
-      loanDistribution,
-    ] = await prisma.$transaction([
+    try {
+      // Batch summary reads into a single Prisma transaction to reduce pool pressure.
+      const [
+        totalCreditors,
+        activeLoans,
+        totalReleased,
+        totalCollections,
+        totalPayables,
+        overdueLoans,
+        dueTodayLoans,
+        dueTodayAmount,
+        dueThisWeekAmount,
+        overdueAmount,
+        recentActivities,
+        loanDistribution,
+      ] = await prisma.$transaction([
       // Total creditors (not archived)
       prisma.creditor.count({
         where: { userId, deletedAt: null, status: 'active' },
@@ -46,7 +84,20 @@ export class DashboardService {
         where: {
           userId,
           deletedAt: null,
-          status: { in: ['Active', 'Overdue'] },
+          OR: [
+            {
+              status: {
+                equals: 'active',
+                mode: 'insensitive',
+              },
+            },
+            {
+              status: {
+                equals: 'overdue',
+                mode: 'insensitive',
+              },
+            },
+          ],
         },
       }),
 
@@ -73,7 +124,10 @@ export class DashboardService {
         where: {
           userId,
           deletedAt: null,
-          status: 'Overdue',
+          status: {
+            equals: 'overdue',
+            mode: 'insensitive',
+          },
           remainingBalance: { gt: 0 },
         },
       }),
@@ -153,54 +207,65 @@ export class DashboardService {
         where: { userId, deletedAt: null },
         _count: { _all: true },
       }),
-    ]);
+      ]);
 
-    const totalPaid = Number(totalCollections._sum.paidAmount || 0);
-    const totalReleaseAmount = Number(totalReleased._sum.principal || 0);
-    const profit = totalPaid - totalReleaseAmount;
+      const totalPaid = Number(totalCollections._sum.paidAmount || 0);
+      const totalReleaseAmount = Number(totalReleased._sum.principal || 0);
+      const profit = totalPaid - totalReleaseAmount;
 
-    const summary = {
-      stats: {
-        totalCreditors,
-        activeLoans,
-        totalReleased: totalReleaseAmount,
-        totalCollections: totalPaid,
-        totalPayables: Number(totalPayables._sum.remainingBalance || 0),
-        profit,
-        overdueLoans,
-        dueTodayLoans,
-      },
-      collections: {
-        dueToday: {
-          count: dueTodayLoans,
-          totalAmount: Number(dueTodayAmount._sum.remainingBalance || 0),
+      const summary = {
+        stats: {
+          totalCreditors,
+          activeLoans,
+          totalReleased: totalReleaseAmount,
+          totalCollections: totalPaid,
+          totalPayables: Number(totalPayables._sum.remainingBalance || 0),
+          profit,
+          overdueLoans,
+          dueTodayLoans,
         },
-        dueThisWeek: {
-          count: 0, // Will be calculated from due this week minus due today
-          totalAmount: Number(dueThisWeekAmount._sum.remainingBalance || 0) - Number(dueTodayAmount._sum.remainingBalance || 0),
+        collections: {
+          dueToday: {
+            count: dueTodayLoans,
+            totalAmount: Number(dueTodayAmount._sum.remainingBalance || 0),
+          },
+          dueThisWeek: {
+            count: 0, // Will be calculated from due this week minus due today
+            totalAmount:
+              Number(dueThisWeekAmount._sum.remainingBalance || 0) -
+              Number(dueTodayAmount._sum.remainingBalance || 0),
+          },
+          overdue: {
+            count: overdueLoans,
+            totalAmount: Number(overdueAmount._sum.remainingBalance || 0),
+          },
         },
-        overdue: {
-          count: overdueLoans,
-          totalAmount: Number(overdueAmount._sum.remainingBalance || 0),
-        },
-      },
-      loanDistribution: loanDistribution.reduce(
-        (acc, item) => {
-          acc[item.status] = item._count._all;
-          return acc;
-        },
-        {} as Record<string, number>
-      ),
-      recentActivities: recentActivities.map((payment) => ({
-        type: 'Payment',
-        description: `Payment of ${payment.amount} for loan ${payment.loan.loanNumber}`,
-        creditorName: `${payment.loan.creditor.firstName} ${payment.loan.creditor.lastName}`,
-        timestamp: payment.createdAt,
-      })),
-    };
+        loanDistribution: loanDistribution.reduce(
+          (acc, item) => {
+            acc[item.status] = item._count._all;
+            return acc;
+          },
+          {} as Record<string, number>
+        ),
+        recentActivities: recentActivities.map((payment) => ({
+          type: 'Payment',
+          description: `Payment of ${payment.amount} for loan ${payment.loan.loanNumber}`,
+          creditorName: `${payment.loan.creditor.firstName} ${payment.loan.creditor.lastName}`,
+          timestamp: payment.createdAt,
+        })),
+      };
 
-    appCache.set(cacheKey, summary, 3 * 60 * 1000); // 3 minutes cache
-    return summary;
+      appCache.set(cacheKey, summary, 3 * 60 * 1000); // 3 minutes cache
+      return summary;
+    } catch (error) {
+      console.error('[DashboardService] Failed to fetch dashboard summary', error);
+
+      if (cached) {
+        return cached;
+      }
+
+      return this.getDefaultSummary();
+    }
   }
 }
 

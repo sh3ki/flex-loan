@@ -148,6 +148,7 @@ model Notification {
   @@index([isRead])
   @@index([createdAt])
   @@index([triggerDate])
+  @@unique([loanId, type])
 }
 
 model SystemSetting {

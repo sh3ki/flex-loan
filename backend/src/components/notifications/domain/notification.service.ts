@@ -32,16 +32,24 @@ export class NotificationService {
     return this.repository.getUnreadCount(userId);
   }
 
+  private getDateOnly(date: Date): Date {
+    const normalized = new Date(date);
+    normalized.setHours(0, 0, 0, 0);
+    return normalized;
+  }
+
   /**
    * Check and create notifications for all loans
    * Runs periodically to generate notifications based on loan dates
    */
   async checkAndCreateNotifications(userId: string) {
-    const now = new Date();
+    const nowDateOnly = this.getDateOnly(new Date());
+    let createdCount = 0;
+
     const loans = await prisma.loan.findMany({
       where: {
         userId,
-        status: 'active',
+        remainingBalance: { gt: 0 },
         deletedAt: null,
       },
       include: {
@@ -50,21 +58,19 @@ export class NotificationService {
     });
 
     for (const loan of loans) {
-      // Calculate dates for notifications
       const dueDate = new Date(loan.dueDate);
+      const dueDateOnly = this.getDateOnly(dueDate);
       const releaseDate = new Date(loan.releaseDate);
+      const releaseDateOnly = this.getDateOnly(releaseDate);
 
       // Check for release date notification
-      const releaseDateOnly = new Date(releaseDate.setHours(0, 0, 0, 0));
-      const nowDateOnly = new Date(now.setHours(0, 0, 0, 0));
-
       if (releaseDateOnly.getTime() === nowDateOnly.getTime()) {
         const releaseExists = await this.repository.checkNotificationExists(
           loan.id,
           'release_date'
         );
         if (!releaseExists) {
-          await this.repository.createNotification({
+          const createdRelease = await this.repository.createNotification({
             type: 'release_date',
             title: `Loan ${loan.loanNumber} Released`,
             description: `Your loan to ${loan.creditor.firstName} ${loan.creditor.lastName} has been released.`,
@@ -72,12 +78,15 @@ export class NotificationService {
             userId,
             triggerDate: releaseDate,
           });
+          if (createdRelease) {
+            createdCount += 1;
+          }
         }
       }
 
       // Check for due date notifications
       const daysUntilDue = Math.floor(
-        (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+        (dueDateOnly.getTime() - nowDateOnly.getTime()) / (1000 * 60 * 60 * 24)
       );
 
       // 1 week before due date
@@ -89,7 +98,7 @@ export class NotificationService {
         if (!weekExists) {
           const weekNotifyDate = new Date(dueDate);
           weekNotifyDate.setDate(weekNotifyDate.getDate() - 7);
-          await this.repository.createNotification({
+          const createdWeek = await this.repository.createNotification({
             type: 'due_1week',
             title: `Loan ${loan.loanNumber} Due in 1 Week`,
             description: `Payment reminder: Your loan to ${loan.creditor.firstName} ${loan.creditor.lastName} is due in 1 week.`,
@@ -97,6 +106,9 @@ export class NotificationService {
             userId,
             triggerDate: weekNotifyDate,
           });
+          if (createdWeek) {
+            createdCount += 1;
+          }
         }
       }
 
@@ -109,7 +121,7 @@ export class NotificationService {
         if (!dayExists) {
           const dayNotifyDate = new Date(dueDate);
           dayNotifyDate.setDate(dayNotifyDate.getDate() - 1);
-          await this.repository.createNotification({
+          const createdDay = await this.repository.createNotification({
             type: 'due_1day',
             title: `Loan ${loan.loanNumber} Due Tomorrow`,
             description: `Payment reminder: Your loan to ${loan.creditor.firstName} ${loan.creditor.lastName} is due tomorrow.`,
@@ -117,6 +129,9 @@ export class NotificationService {
             userId,
             triggerDate: dayNotifyDate,
           });
+          if (createdDay) {
+            createdCount += 1;
+          }
         }
       }
 
@@ -127,7 +142,7 @@ export class NotificationService {
           'due_today'
         );
         if (!dueExists) {
-          await this.repository.createNotification({
+          const createdDueToday = await this.repository.createNotification({
             type: 'due_today',
             title: `Loan ${loan.loanNumber} Due Today`,
             description: `Payment due today: Your loan to ${loan.creditor.firstName} ${loan.creditor.lastName} is due today.`,
@@ -135,10 +150,39 @@ export class NotificationService {
             userId,
             triggerDate: dueDate,
           });
+          if (createdDueToday) {
+            createdCount += 1;
+          }
+        }
+      }
+
+      // 1 day after due date
+      if (daysUntilDue === -1) {
+        const overdueExists = await this.repository.checkNotificationExists(
+          loan.id,
+          'due_1day_after'
+        );
+        if (!overdueExists) {
+          const overdueNotifyDate = new Date(dueDate);
+          overdueNotifyDate.setDate(overdueNotifyDate.getDate() + 1);
+          const createdOverdue = await this.repository.createNotification({
+            type: 'due_1day_after',
+            title: `Loan ${loan.loanNumber} Overdue by 1 Day`,
+            description: `Overdue reminder: Your loan to ${loan.creditor.firstName} ${loan.creditor.lastName} is now 1 day overdue.`,
+            loanId: loan.id,
+            userId,
+            triggerDate: overdueNotifyDate,
+          });
+          if (createdOverdue) {
+            createdCount += 1;
+          }
         }
       }
     }
 
-    return this.repository.findUserNotifications(userId);
+    return {
+      hasChanges: createdCount > 0,
+      createdCount,
+    };
   }
 }

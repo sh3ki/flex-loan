@@ -1,18 +1,37 @@
 import type { ReactNode } from 'react';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/auth.store';
 import { useLogoutMutation } from '../../queries/auth.queries';
+import { useCheckNotificationsMutation } from '../../queries/notification.queries';
 import { NotificationBell } from './NotificationBell';
 import { NotificationModal } from '../common/NotificationModal';
+import { ConfirmationModal } from '../common/ConfirmationModal';
 
 export function AdminLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const user = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const logout = useAuthStore((state) => state.logout);
   const logoutMutation = useLogoutMutation();
+  const checkNotificationsMutation = useCheckNotificationsMutation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
+  const [isLogoutConfirmationOpen, setIsLogoutConfirmationOpen] = useState(false);
+
+  useEffect(() => {
+    const hasToken = !!localStorage.getItem('accessToken');
+    if (!isAuthenticated || !hasToken) {
+      return;
+    }
+
+    checkNotificationsMutation.mutate(undefined, {
+      onError: (error) => {
+        console.error('Notification check failed:', error);
+      },
+    });
+  }, [location.pathname, isAuthenticated]);
 
   const menuItems = [
     { label: 'Dashboard', href: '/admin/dashboard', icon: <DashboardIcon /> },
@@ -71,7 +90,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
             <div className="border-t border-slate-200 p-4">
               <button
-                onClick={handleLogout}
+                onClick={() => setIsLogoutConfirmationOpen(true)}
                 className="w-full rounded-xl border border-slate-200 bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800"
               >
                 Logout
@@ -103,6 +122,14 @@ export function AdminLayout({ children }: { children: ReactNode }) {
                     Welcome, {user?.username || 'Admin'}
                   </div>
                 </div>
+                <button
+                  onClick={() => setIsLogoutConfirmationOpen(true)}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-700 transition hover:bg-slate-100"
+                  title="Logout"
+                  aria-label="Logout"
+                >
+                  <LogoutIcon />
+                </button>
               </div>
             </div>
           </header>
@@ -114,6 +141,17 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       <NotificationModal
         isOpen={isNotificationModalOpen}
         onClose={() => setIsNotificationModalOpen(false)}
+      />
+
+      <ConfirmationModal
+        isOpen={isLogoutConfirmationOpen}
+        title="Confirm Logout"
+        message="Are you sure you want to logout? You will need to login again to access the system."
+        confirmText="Logout"
+        cancelText="Cancel"
+        isDangerous={true}
+        onConfirm={handleLogout}
+        onCancel={() => setIsLogoutConfirmationOpen(false)}
       />
     </div>
   );
@@ -223,6 +261,16 @@ function CalendarIcon() {
       <path d="M3 9h18" />
       <path d="M8 3v6" />
       <path d="M16 3v6" />
+    </svg>
+  );
+}
+
+function LogoutIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
     </svg>
   );
 }

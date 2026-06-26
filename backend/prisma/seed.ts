@@ -54,7 +54,7 @@ async function main() {
 
   const loan1 = await prisma.loan.create({
     data: {
-      loanNumber: `LOAN-${Date.now()}-001`,
+      loanNumber: 'LOAN-001',
       principal: 10000,
       interestPerDay: 1,
       termDays,
@@ -73,7 +73,7 @@ async function main() {
 
   const loan2 = await prisma.loan.create({
     data: {
-      loanNumber: `LOAN-${Date.now()}-002`,
+      loanNumber: 'LOAN-002',
       principal: 5000,
       interestPerDay: 0.5,
       termDays: 15,
@@ -95,7 +95,7 @@ async function main() {
   // Create sample payments
   const payment1 = await prisma.payment.create({
     data: {
-      paymentNumber: `PAY-${Date.now()}-001`,
+      paymentNumber: 'PAY-001',
       amount: 2000,
       paymentDate: new Date(),
       paymentMethod: 'Cash',

@@ -1,4 +1,5 @@
 import { prisma } from '../../../shared/utils/prisma.client';
+import { Prisma } from '@prisma/client';
 
 export class NotificationRepository {
   async findUserNotifications(userId: string, limit: number = 50) {
@@ -49,16 +50,24 @@ export class NotificationRepository {
     userId: string;
     triggerDate: Date;
   }) {
-    return prisma.notification.create({
-      data,
-      include: {
-        loan: {
-          include: {
-            creditor: true,
+    try {
+      return await prisma.notification.create({
+        data,
+        include: {
+          loan: {
+            include: {
+              creditor: true,
+            },
           },
         },
-      },
-    });
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        return null;
+      }
+
+      throw error;
+    }
   }
 
   async markAsRead(notificationId: string) {
@@ -108,8 +117,6 @@ export class NotificationRepository {
       where: {
         loanId,
         type,
-        isRead: false,
-        deletedAt: null,
       },
     });
   }

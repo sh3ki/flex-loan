@@ -67,10 +67,6 @@ export function App() {
           const setAuth = useAuthStore.getState().setAuth;
           setAuth(res.data.user, accessToken);
           preloadAdminPages();
-          // Check and create notifications for loan due dates
-          api.post('/api/notifications/check').catch((err) => {
-            console.error('Failed to check notifications:', err);
-          });
         })
         .catch(() => {
           // Token is invalid, clear it
@@ -79,11 +75,6 @@ export function App() {
         });
     } else if (accessToken && isAuthenticated) {
       preloadAdminPages();
-
-      // Check and create notifications for loan due dates
-      api.post('/api/notifications/check').catch((err) => {
-        console.error('Failed to check notifications:', err);
-      });
 
       void queryClient.prefetchQuery({
         queryKey: queryKeys.dashboard.summary(),

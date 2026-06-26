@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { apiClient } from '../../services/api';
+import { queryKeys } from '../../queries/queryKeys';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, getDay, subDays } from 'date-fns';
 import { AdminLayout } from '../../components/layout/AdminLayout';
 
@@ -30,11 +31,15 @@ export function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
 
   const { data: loans = [] } = useQuery({
-    queryKey: ['loans', 'all'],
+    queryKey: queryKeys.loans.list(1, 1000, '', 'active'),
     queryFn: async () => {
-      const response = await apiClient.get('/api/loans');
+      const response = await apiClient.get('/api/loans?limit=1000&status=active');
       return response.data.data || [];
     },
+    staleTime: 10 * 60 * 1000, // 10 minutes - calendar data doesn't change often
+    gcTime: 30 * 60 * 1000, // 30 minutes - keep in cache longer
+    refetchOnWindowFocus: false, // Don't refetch when user switches tabs
+    refetchOnReconnect: false, // Don't refetch on reconnect
   });
 
   const monthStart = startOfMonth(currentDate);
@@ -188,10 +193,10 @@ export function CalendarPage() {
                               ? 'bg-green-500 hover:bg-green-600'
                               : 'bg-red-500 hover:bg-red-600'
                           }`}
-                          title={`LOAN-${event.loan.loanNumber} - ${event.loan.borrower?.firstName || event.loan.creditor?.firstName} ${event.loan.borrower?.lastName || event.loan.creditor?.lastName}`}
+                          title={`${event.loan.loanNumber} - ${event.loan.borrower?.firstName || event.loan.creditor?.firstName} ${event.loan.borrower?.lastName || event.loan.creditor?.lastName}`}
                         >
                           {event.type === 'release' ? '📤' : '📥'}{' '}
-                          LOAN-{event.loan.loanNumber}
+                          {event.loan.loanNumber}
                         </div>
                       ))}
                     </div>
@@ -225,7 +230,7 @@ export function CalendarPage() {
                   className="border border-slate-200 rounded-lg p-4 hover:border-blue-500 transition-colors"
                 >
                   <div className="font-semibold text-slate-900 mb-2">
-                    LOAN-{loan.loanNumber}
+                    {loan.loanNumber}
                   </div>
                   <div className="text-sm text-slate-600 mb-3">
                     {loan.borrower?.firstName || loan.creditor?.firstName} {loan.borrower?.lastName || loan.creditor?.lastName}

@@ -33,6 +33,18 @@ export class AuthRepository {
     // For now, we'll use httpOnly cookies instead
     return true;
   }
+
+  async updateUser(id: string, data: { username?: string; password?: string }) {
+    return prisma.user.update({
+      where: { id },
+      data,
+      select: {
+        id: true,
+        username: true,
+        role: true,
+      },
+    });
+  }
 }
 
 export const authRepository = new AuthRepository();

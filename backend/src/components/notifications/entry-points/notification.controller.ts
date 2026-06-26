@@ -4,13 +4,18 @@ import { NotificationService } from '../domain/notification.service';
 const notificationService = new NotificationService();
 
 export class NotificationController {
+  private static getAuthenticatedUserId(req: Request): string | null {
+    const user = (req as any).user;
+    return user?.userId || user?.id || null;
+  }
+
   static async getNotifications(
     req: Request,
     res: Response,
     next: NextFunction
   ) {
     try {
-      const userId = (req as any).user?.id;
+      const userId = NotificationController.getAuthenticatedUserId(req);
 
       if (!userId) {
         return res.status(401).json({ message: 'Unauthorized' });
@@ -33,7 +38,7 @@ export class NotificationController {
     next: NextFunction
   ) {
     try {
-      const userId = (req as any).user?.id;
+      const userId = NotificationController.getAuthenticatedUserId(req);
 
       if (!userId) {
         return res.status(401).json({ message: 'Unauthorized' });
@@ -58,7 +63,7 @@ export class NotificationController {
     next: NextFunction
   ) {
     try {
-      const userId = (req as any).user?.id;
+      const userId = NotificationController.getAuthenticatedUserId(req);
 
       if (!userId) {
         return res.status(401).json({ message: 'Unauthorized' });
@@ -106,7 +111,7 @@ export class NotificationController {
     next: NextFunction
   ) {
     try {
-      const userId = (req as any).user?.id;
+      const userId = NotificationController.getAuthenticatedUserId(req);
 
       if (!userId) {
         return res.status(401).json({ message: 'Unauthorized' });
@@ -154,17 +159,17 @@ export class NotificationController {
     next: NextFunction
   ) {
     try {
-      const userId = (req as any).user?.id;
+      const userId = NotificationController.getAuthenticatedUserId(req);
 
       if (!userId) {
         return res.status(401).json({ message: 'Unauthorized' });
       }
 
-      const notifications = await notificationService.checkAndCreateNotifications(userId);
+      const result = await notificationService.checkAndCreateNotifications(userId);
 
       res.status(200).json({
         success: true,
-        data: notifications,
+        data: result,
       });
     } catch (error) {
       next(error);

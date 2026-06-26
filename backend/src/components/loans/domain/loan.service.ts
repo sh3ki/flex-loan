@@ -59,7 +59,7 @@ export class LoanService {
       ...computed,
       paidAmount: 0,
       remainingBalance: computed.totalPayable,
-      status: 'Active',
+      status: 'active',
     });
 
     appCache.delete(cacheKeys.dashboardSummary(userId));

@@ -2,6 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../services/api';
 import { queryKeys } from './queryKeys';
 
+const notificationQueryOptions = {
+  staleTime: 10 * 60 * 1000,
+  gcTime: 30 * 60 * 1000,
+  refetchOnMount: false,
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
+};
+
 export const useNotificationsQuery = (enabled = true) => {
   return useQuery({
     queryKey: queryKeys.notifications.list(),
@@ -9,8 +17,7 @@ export const useNotificationsQuery = (enabled = true) => {
       const response = await apiClient.get('/api/notifications');
       return response.data.data;
     },
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 5 * 60 * 1000, // 5 minutes
+    ...notificationQueryOptions,
     enabled,
   });
 };
@@ -22,8 +29,7 @@ export const useUnreadNotificationsQuery = (enabled = true) => {
       const response = await apiClient.get('/api/notifications/unread');
       return response.data.data;
     },
-    staleTime: 30 * 1000,
-    gcTime: 5 * 60 * 1000,
+    ...notificationQueryOptions,
     enabled,
   });
 };
@@ -35,9 +41,7 @@ export const useUnreadCountQuery = (enabled = true) => {
       const response = await apiClient.get('/api/notifications/unread/count');
       return response.data.unreadCount;
     },
-    staleTime: 30 * 1000,
-    gcTime: 5 * 60 * 1000,
-    refetchInterval: 60 * 1000, // Refetch every minute
+    ...notificationQueryOptions,
     enabled,
   });
 };
@@ -50,7 +54,11 @@ export const useCheckNotificationsMutation = () => {
       const response = await apiClient.post('/api/notifications/check');
       return response.data.data;
     },
-    onSuccess: () => {
+    onSuccess: (result: { hasChanges?: boolean }) => {
+      if (!result?.hasChanges) {
+        return;
+      }
+
       queryClient.invalidateQueries({ queryKey: queryKeys.notifications.list() });
       queryClient.invalidateQueries({ queryKey: queryKeys.notifications.unread() });
       queryClient.invalidateQueries({ queryKey: queryKeys.notifications.unreadCount() });
@@ -63,7 +71,7 @@ export const useMarkNotificationAsReadMutation = () => {
 
   return useMutation({
     mutationFn: async (notificationId: string) => {
-      const response = await apiClient.patch(`/notifications/${notificationId}/read`);
+      const response = await apiClient.patch(`/api/notifications/${notificationId}/read`);
       return response.data.data;
     },
     onSuccess: () => {
@@ -95,7 +103,7 @@ export const useDeleteNotificationMutation = () => {
 
   return useMutation({
     mutationFn: async (notificationId: string) => {
-      await apiClient.delete(`/notifications/${notificationId}`);
+      await apiClient.delete(`/api/notifications/${notificationId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.notifications.list() });

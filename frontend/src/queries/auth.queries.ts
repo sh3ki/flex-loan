@@ -23,3 +23,9 @@ export const useValidateQuery = (enabled = true) => {
     retry: false,
   });
 };
+
+export const useUpdateProfileMutation = () => {
+  return useMutation({
+    mutationFn: (data: { username?: string; password?: string }) => authService.updateProfile(data),
+  });
+};

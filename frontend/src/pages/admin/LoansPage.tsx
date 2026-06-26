@@ -10,6 +10,16 @@ import { Trash2, Eye, Edit2, Plus, Send } from 'lucide-react';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useNavigate } from 'react-router-dom';
 
+function formatLoanStatus(status: string) {
+  const normalized = (status || '').trim().toLowerCase();
+
+  if (normalized === 'active') return 'Active';
+  if (normalized === 'paid') return 'Paid';
+  if (normalized === 'overdue') return 'Overdue';
+
+  return status;
+}
+
 export function LoansPage() {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
@@ -28,8 +38,8 @@ export function LoansPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
-          <h1 className="text-3xl font-bold text-slate-900">Loans</h1>
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-6 sm:py-5">
+          <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Loans</h1>
           <button 
             onClick={() => setAddModalOpen(true)}
             className="inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800">
@@ -39,7 +49,7 @@ export function LoansPage() {
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <input
             type="text"
             placeholder="Search loans..."
@@ -92,7 +102,85 @@ export function LoansPage() {
             <p>No loans found. Create your first loan to get started.</p>
           </div>
         ) : (
-          <div className="w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <>
+          <div className="space-y-3 md:hidden">
+            {data?.data?.map((loan: any) => (
+              <article key={loan.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                {(() => {
+                  const statusLabel = formatLoanStatus(loan.status);
+                  const statusKey = statusLabel.toLowerCase();
+
+                  return (
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.12em] text-slate-500">Loan #</p>
+                    <p className="font-mono text-sm font-semibold text-slate-900">{loan.loanNumber}</p>
+                  </div>
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      statusKey === 'active'
+                        ? 'bg-blue-50 text-blue-700'
+                        : statusKey === 'paid'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-slate-200 text-slate-700'
+                    }`}
+                  >
+                    {statusLabel}
+                  </span>
+                </div>
+                  );
+                })()}
+
+                <div className="mt-3 space-y-1.5 text-sm text-slate-700">
+                  <p><span className="font-medium text-slate-900">Borrower:</span> {loan.creditor?.firstName} {loan.creditor?.lastName}</p>
+                  <p><span className="font-medium text-slate-900">Principal:</span> ₱{(loan.principal).toLocaleString()}</p>
+                  <p><span className="font-medium text-slate-900">Payable:</span> ₱{Number(loan.totalPayable).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                  <p><span className="font-medium text-slate-900">Balance:</span> <span className="font-semibold text-red-600">₱{Number(loan.remainingBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span></p>
+                  <p><span className="font-medium text-slate-900">Due:</span> {new Date(loan.dueDate).toLocaleDateString()}</p>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setViewLoanId(loan.id)}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700"
+                    title="View Details"
+                  >
+                    <Eye size={14} />
+                    View
+                  </button>
+                  <button
+                    onClick={() => navigate('/admin/payments', { state: { loanId: loan.id } })}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs font-semibold text-green-700"
+                    title="Add Payment"
+                  >
+                    <Send size={14} />
+                    Payment
+                  </button>
+                  <button
+                    onClick={() => setEditLoanId(loan.id)}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-700"
+                    title="Edit"
+                  >
+                    <Edit2 size={14} />
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => {
+                      setDeleteLoanId(loan.id);
+                      setSelectedLoanNumber(loan.loanNumber);
+                    }}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700"
+                    title="Delete"
+                  >
+                    <Trash2 size={14} />
+                    Delete
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <div className="hidden w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm md:block">
             <table className="min-w-full">
               <thead className="border-b border-slate-200 bg-slate-50">
                 <tr>
@@ -122,17 +210,24 @@ export function LoansPage() {
                     <td className="px-6 py-4 text-sm font-semibold text-red-600">₱{Number(loan.remainingBalance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                     <td className="px-6 py-4 text-sm text-slate-700">{new Date(loan.dueDate).toLocaleDateString()}</td>
                     <td className="px-6 py-4 text-sm">
+                      {(() => {
+                        const statusLabel = formatLoanStatus(loan.status);
+                        const statusKey = statusLabel.toLowerCase();
+
+                        return (
                       <span
                         className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                          loan.status === 'Active'
+                          statusKey === 'active'
                             ? 'bg-blue-50 text-blue-700'
-                            : loan.status === 'Paid'
+                            : statusKey === 'paid'
                             ? 'bg-yellow-100 text-yellow-800'
                             : 'bg-slate-200 text-slate-700'
                         }`}
                       >
-                        {loan.status}
+                        {statusLabel}
                       </span>
+                        );
+                      })()}
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <div className="flex items-center gap-2">
@@ -178,6 +273,7 @@ export function LoansPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
 
         {/* Modals */}

@@ -58,11 +58,11 @@ export function LoginPage() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#1665b8] px-4 py-10 md:px-8 md:py-14">
+    <div className="relative min-h-screen overflow-hidden bg-[#1665b8] px-4 py-6 sm:py-10 md:px-8 md:py-14">
       <div className="pointer-events-none absolute -left-10 top-8 h-44 w-44 rounded-full border-16 border-[#f0db3d] opacity-80" />
       <div className="pointer-events-none absolute -right-12 bottom-8 h-52 w-52 rounded-full bg-[#f0db3d]/90" />
 
-      <div className="relative mx-auto grid w-full max-w-5xl overflow-hidden rounded-4xl border-4 border-white/60 bg-[#eceff3] shadow-2xl shadow-black/20 md:grid-cols-2">
+      <div className="relative mx-auto grid w-full max-w-5xl overflow-hidden rounded-3xl border-4 border-white/60 bg-[#eceff3] shadow-2xl shadow-black/20 md:rounded-4xl md:grid-cols-2">
         <div className="hidden flex-col justify-between bg-[#1665b8] p-9 text-white md:flex">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#f0db3d]">MFLEX</p>
@@ -74,10 +74,10 @@ export function LoginPage() {
 
         </div>
 
-        <div className="p-7 md:p-10">
-          <div className="mb-8">
+        <div className="p-5 sm:p-7 md:p-10">
+          <div className="mb-6 sm:mb-8">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#1665b8]">Secure Access</p>
-            <h2 className="mt-2 text-4xl font-black uppercase text-[#1665b8]">Sign In</h2>
+            <h2 className="mt-2 text-3xl font-black uppercase text-[#1665b8] sm:text-4xl">Sign In</h2>
             <p className="mt-2 text-sm text-slate-600">Enter your credentials to continue.</p>
           </div>
 
@@ -87,7 +87,7 @@ export function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 sm:space-y-5">
             <div>
               <label htmlFor="username" className="mb-2 block text-sm font-medium text-slate-700">
                 Username
@@ -136,12 +136,6 @@ export function LoginPage() {
               {isSubmitting || loginMutation.isPending ? 'Signing in...' : 'Login'}
             </button>
           </form>
-
-          <div className="mt-6 rounded-xl border border-yellow-300 bg-[#f0db3d] px-4 py-3 text-sm text-slate-700 md:hidden">
-            <p className="font-semibold text-slate-900">Default Login</p>
-            <p className="mt-1">Username: admin</p>
-            <p>Password: admin123</p>
-          </div>
         </div>
       </div>
     </div>

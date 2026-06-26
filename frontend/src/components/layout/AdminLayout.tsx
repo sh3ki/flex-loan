@@ -33,6 +33,23 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     });
   }, [location.pathname, isAuthenticated]);
 
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!isSidebarOpen) {
+      return;
+    }
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isSidebarOpen]);
+
   const menuItems = [
     { label: 'Dashboard', href: '/admin/dashboard', icon: <DashboardIcon /> },
     { label: 'Calendar', href: '/admin/calendar', icon: <CalendarIcon /> },
@@ -169,7 +186,8 @@ function NavLink({
   onNavigate: () => void;
 }) {
   const navigate = useNavigate();
-  const isActive = window.location.pathname === href;
+  const location = useLocation();
+  const isActive = location.pathname === href;
 
   return (
     <button

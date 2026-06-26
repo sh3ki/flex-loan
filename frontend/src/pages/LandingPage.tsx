@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { usePublicSettingsQuery } from '../queries';
 import loanImage from '../assets/loan.png';
+import { useState } from 'react';
 
 const fallbackSettings = {
   businessName: 'MFLEX',
@@ -19,6 +20,7 @@ const fallbackSettings = {
 export function LandingPage() {
   const { data } = usePublicSettingsQuery();
   const settings = data || fallbackSettings;
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-[#1665b8] text-white">
@@ -34,19 +36,39 @@ export function LandingPage() {
             <a href="#process" className="transition hover:text-[#f0db3d]">Process</a>
             <a href="#contact" className="transition hover:text-[#f0db3d]">Contact</a>
           </nav>
-          <Link
-            to="/login"
-            className="rounded-xl border-2 border-white/70 bg-[#1665b8] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-[#0f569f]"
-          >
-            Portal Login
-          </Link>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsMobileMenuOpen((current) => !current)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border-2 border-white/60 text-white md:hidden"
+              aria-label="Toggle menu"
+            >
+              <MenuIcon />
+            </button>
+            <Link
+              to="/login"
+              className="rounded-xl border-2 border-white/70 bg-[#1665b8] px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-white transition hover:bg-[#0f569f]"
+            >
+              Portal Login
+            </Link>
+          </div>
         </div>
+        {isMobileMenuOpen && (
+          <div className="border-t border-white/20 bg-[#14589f] px-4 py-3 md:hidden">
+            <nav className="flex flex-col gap-2 text-sm font-semibold uppercase tracking-[0.08em] text-white">
+              <a onClick={() => setIsMobileMenuOpen(false)} href="#home" className="rounded-lg px-2 py-1.5 transition hover:bg-white/10">Home</a>
+              <a onClick={() => setIsMobileMenuOpen(false)} href="#about" className="rounded-lg px-2 py-1.5 transition hover:bg-white/10">About</a>
+              <a onClick={() => setIsMobileMenuOpen(false)} href="#offers" className="rounded-lg px-2 py-1.5 transition hover:bg-white/10">Loan Offers</a>
+              <a onClick={() => setIsMobileMenuOpen(false)} href="#process" className="rounded-lg px-2 py-1.5 transition hover:bg-white/10">Process</a>
+              <a onClick={() => setIsMobileMenuOpen(false)} href="#contact" className="rounded-lg px-2 py-1.5 transition hover:bg-white/10">Contact</a>
+            </nav>
+          </div>
+        )}
       </header>
 
       <main className="relative overflow-hidden">
         {/* Top right decorative elements */}
         <div className="pointer-events-none absolute -right-8 top-4 h-56 w-56 rounded-full border-4 border-[#f0db3d]/60 opacity-100 md:h-72 md:w-72" />
-        <div className="pointer-events-none absolute -right-16 top-24 h-96 w-96 rounded-full border border-[#f0db3d]/40 opacity-80 md:h-[28rem] md:w-[28rem]" />
+        <div className="pointer-events-none absolute -right-16 top-24 h-96 w-96 rounded-full border border-[#f0db3d]/40 opacity-80 md:h-112 md:w-md" />
         <div className="pointer-events-none absolute right-8 top-8 h-28 w-28 bg-[radial-gradient(circle,#f0db3d_2px,transparent_2px)] bg-size-[14px_14px] opacity-100 md:right-20 md:top-12 md:h-40 md:w-40" />
         
         {/* Bottom left abstract shapes */}
@@ -59,13 +81,13 @@ export function LandingPage() {
 
           <div className="grid gap-8 md:grid-cols-2 md:items-center">
             <div>
-              <p className="text-4xl font-black uppercase leading-[1.04] tracking-tight text-white md:text-6xl">
+              <p className="text-3xl font-black uppercase leading-[1.04] tracking-tight text-white sm:text-4xl md:text-6xl">
                 {settings.tagline}
               </p>
               <p className="mt-5 max-w-md text-sm text-white/90 md:text-base">{settings.heroSubtitle}</p>
             </div>
 
-            <div className="relative mx-auto h-64 w-64 md:h-80 md:w-80">
+            <div className="relative mx-auto h-52 w-52 sm:h-64 sm:w-64 md:h-80 md:w-80">
               <div className="absolute inset-0 rounded-full border-4 border-[#1665b8] bg-white" />
               <div className="absolute inset-4 rounded-full bg-linear-to-br from-slate-100 via-slate-200 to-slate-300" />
               <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-full">
@@ -79,9 +101,9 @@ export function LandingPage() {
           </div>
 
           <div className="mt-6 rounded-[2.2rem] bg-[#eceff3] px-5 py-6 text-[#1665b8] shadow-xl shadow-black/10 md:px-8 md:py-8">
-            <p className="text-4xl font-black uppercase leading-none tracking-tight md:text-6xl">Quick Personal Loan Access</p>
+            <p className="text-3xl font-black uppercase leading-none tracking-tight sm:text-4xl md:text-6xl">Quick Personal Loan Access</p>
             <div className="mt-6 inline-flex rounded-4xl bg-[#f0db3d] px-6 py-3 shadow-lg shadow-black/10 md:px-8 md:py-4">
-              <p className="text-4xl font-black uppercase tracking-wide text-[#101828] md:text-6xl">@{settings.businessName}</p>
+              <p className="text-2xl font-black uppercase tracking-wide text-[#101828] sm:text-3xl md:text-6xl">@{settings.businessName}</p>
             </div>
             <div className="mt-6 flex flex-wrap gap-3">
               <span className="rounded-xl border-2 border-[#1665b8]/30 bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-[#1665b8]">
@@ -218,7 +240,7 @@ function ContactPanel({
 
 function ContactChip({ icon, text }: { icon: string; text: string }) {
   return (
-    <div className="flex min-w-64 items-center gap-2 rounded-full bg-[#eceff3] px-4 py-1.5 text-sm font-semibold shadow-md shadow-black/10">
+    <div className="flex w-full min-w-0 items-center gap-2 rounded-full bg-[#eceff3] px-4 py-1.5 text-sm font-semibold shadow-md shadow-black/10 sm:min-w-64">
       <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#1665b8] text-xs text-white">{icon}</span>
       <span className="truncate">{text}</span>
     </div>

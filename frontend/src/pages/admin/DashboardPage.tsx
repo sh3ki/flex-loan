@@ -78,9 +78,9 @@ export function DashboardPage() {
     <AdminLayout>
       <div className="mx-auto max-w-7xl space-y-7">
         {/* Header */}
-        <div className="rounded-2xl border border-slate-200 bg-white px-6 py-5 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-6 sm:py-5">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Dashboard</p>
-          <h1 className="mt-1 text-3xl font-bold text-slate-900">Analytics & Performance</h1>
+          <h1 className="mt-1 text-2xl font-bold text-slate-900 sm:text-3xl">Analytics & Performance</h1>
           <p className="mt-2 text-sm text-slate-500">Real-time insights into lending performance and collections.</p>
         </div>
 
@@ -273,7 +273,7 @@ export function DashboardPage() {
             <div className="mt-5 space-y-3">
               {data.recentActivities.map((activity: any, index: number) => (
                 <div key={index} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  <div className="flex items-start justify-between">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <p className="font-semibold text-slate-900">{activity.type}</p>
                       <p className="text-sm text-slate-600">{activity.description}</p>
@@ -311,11 +311,11 @@ function MetricCard({ label, value, subValue, icon, tone }: { label: string; val
   };
 
   return (
-    <div className={`rounded-2xl border p-6 shadow-sm ${toneClasses[tone]}`}>
+    <div className={`rounded-2xl border p-4 shadow-sm sm:p-6 ${toneClasses[tone]}`}>
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-medium text-slate-600">{label}</p>
-          <p className={`mt-2 text-3xl font-bold ${iconClasses[tone]}`}>{value}</p>
+          <p className={`mt-2 text-2xl font-bold sm:text-3xl ${iconClasses[tone]}`}>{value}</p>
           <p className="mt-1 text-xs text-slate-500">{subValue}</p>
         </div>
         <div className={`h-3 w-3 rounded-full ${iconClasses[tone]}`} />
@@ -332,11 +332,11 @@ function StatCard({ label, value, icon, tone }: { label: string; value: number; 
   };
 
   return (
-    <div className={`rounded-2xl border p-6 shadow-sm ${toneClasses[tone]}`}>
+    <div className={`rounded-2xl border p-4 shadow-sm sm:p-6 ${toneClasses[tone]}`}>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-slate-600">{label}</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">{value}</p>
+          <p className="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">{value}</p>
         </div>
         {icon}
       </div>

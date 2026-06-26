@@ -107,14 +107,20 @@ export function CalendarPage() {
 
   const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+  const mobileEvents = useMemo(() => {
+    return fullCalendarDays
+      .map((day) => ({ day, dayEvents: getDayEvents(day), isCurrentMonth: isSameMonth(day, currentDate) }))
+      .filter((item) => item.isCurrentMonth && item.dayEvents.length > 0);
+  }, [fullCalendarDays, currentDate, events]);
+
   return (
     <AdminLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
+        <div className="mb-6 sm:mb-8">
+          <div className="mb-2 flex items-center gap-3">
             <Calendar className="text-blue-600" size={32} />
-            <h1 className="text-4xl font-bold text-slate-900">Loan Calendar</h1>
+            <h1 className="text-2xl font-bold text-slate-900 sm:text-4xl">Loan Calendar</h1>
           </div>
           <p className="text-slate-600">
             Track all loan release and due dates at a glance
@@ -122,9 +128,9 @@ export function CalendarPage() {
         </div>
 
         {/* Calendar Card */}
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="overflow-hidden rounded-2xl bg-white shadow-lg">
           {/* Month Navigation */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-6 flex items-center justify-between">
+          <div className="flex items-center justify-between bg-linear-to-r from-blue-600 to-indigo-600 px-3 py-4 sm:px-6 sm:py-6">
             <button
               onClick={handlePrevMonth}
               className="p-2 hover:bg-blue-700 rounded-lg transition-colors"
@@ -132,7 +138,7 @@ export function CalendarPage() {
               <ChevronLeft size={24} className="text-white" />
             </button>
 
-            <h2 className="text-2xl font-bold text-white">
+            <h2 className="text-lg font-bold text-white sm:text-2xl">
               {format(currentDate, 'MMMM yyyy')}
             </h2>
 
@@ -144,8 +150,36 @@ export function CalendarPage() {
             </button>
           </div>
 
+          {/* Mobile Event List */}
+          <div className="space-y-3 p-4 md:hidden">
+            {mobileEvents.length === 0 ? (
+              <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-5 text-center text-sm text-slate-500">
+                No scheduled events this month.
+              </p>
+            ) : (
+              mobileEvents.map(({ day, dayEvents }) => (
+                <div key={day.toISOString()} className="rounded-xl border border-slate-200 p-3">
+                  <p className="text-sm font-semibold text-slate-900">{format(day, 'EEE, MMM d')}</p>
+                  <div className="mt-2 space-y-1.5">
+                    {dayEvents.map((event, index) => (
+                      <div
+                        key={index}
+                        className={`rounded-md px-2 py-1.5 text-xs font-medium text-white ${
+                          event.type === 'release' ? 'bg-green-500' : 'bg-red-500'
+                        }`}
+                        title={`${event.loan.loanNumber} - ${event.loan.borrower?.firstName || event.loan.creditor?.firstName} ${event.loan.borrower?.lastName || event.loan.creditor?.lastName}`}
+                      >
+                        {event.type === 'release' ? 'Release' : 'Due'}: {event.loan.loanNumber}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
           {/* Calendar Grid */}
-          <div className="p-6">
+          <div className="hidden p-6 md:block">
             {/* Week Day Headers */}
             <div className="grid grid-cols-7 gap-2 mb-4">
               {weekDays.map((day) => (
@@ -207,7 +241,7 @@ export function CalendarPage() {
           </div>
 
           {/* Legend */}
-          <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-center gap-8">
+          <div className="flex flex-wrap items-center justify-center gap-4 border-t border-slate-200 bg-slate-50 px-6 py-4 sm:gap-8">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-green-500 rounded-full" />
               <span className="text-sm text-slate-600">Release Date</span>

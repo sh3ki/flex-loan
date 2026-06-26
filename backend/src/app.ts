@@ -46,8 +46,8 @@ app.use('/api/notifications', notificationRoutes);
 const frontendDistPath = path.join(__dirname, '../../frontend/dist');
 app.use(express.static(frontendDistPath));
 
-// Catch-all route for SPA - serves index.html for all non-API routes
-app.get('*', (req, res) => {
+// Catch-all route for SPA - Express 5 requires named wildcard params
+app.get('/{*splat}', (req, res) => {
   res.sendFile(path.join(frontendDistPath, 'index.html'));
 });
 

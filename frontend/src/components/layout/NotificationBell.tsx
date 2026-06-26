@@ -1,13 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Bell } from 'lucide-react';
 import { useUnreadCountQuery } from '../../queries/notification.queries';
+import { useAuthStore } from '../../store/auth.store';
 
 interface NotificationBellProps {
   onBellClick: () => void;
 }
 
 export function NotificationBell({ onBellClick }: NotificationBellProps) {
-  const { data: unreadCount = 0 } = useUnreadCountQuery();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { data: unreadCount = 0 } = useUnreadCountQuery(isAuthenticated);
   const [isAnimating, setIsAnimating] = useState(false);
   const prevCountRef = useRef(unreadCount);
 

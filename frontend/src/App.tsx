@@ -5,6 +5,7 @@ import { Toaster } from 'sonner';
 import { LandingPage } from './pages/LandingPage';
 import { LoginPage } from './pages/LoginPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { useAuthStore } from './store/auth.store';
 import api from './services/api';
 import { queryKeys } from './queries/queryKeys';
 import './index.css';
@@ -52,20 +53,45 @@ function AdminPageFallback() {
 }
 
 export function App() {
+  // Call hooks at component level, not inside callbacks
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
   useEffect(() => {
+    // Initialize auth store from localStorage if needed
     const accessToken = localStorage.getItem('accessToken');
-    if (!accessToken) {
-      return;
+    
+    if (accessToken && !isAuthenticated) {
+      // Token exists but store isn't hydrated, validate the token
+      api.get('/api/auth/validate')
+        .then((res) => {
+          const setAuth = useAuthStore.getState().setAuth;
+          setAuth(res.data.user, accessToken);
+          preloadAdminPages();
+          // Check and create notifications for loan due dates
+          api.post('/api/notifications/check').catch((err) => {
+            console.error('Failed to check notifications:', err);
+          });
+        })
+        .catch(() => {
+          // Token is invalid, clear it
+          localStorage.removeItem('accessToken');
+          useAuthStore.getState().logout();
+        });
+    } else if (accessToken && isAuthenticated) {
+      preloadAdminPages();
+
+      // Check and create notifications for loan due dates
+      api.post('/api/notifications/check').catch((err) => {
+        console.error('Failed to check notifications:', err);
+      });
+
+      void queryClient.prefetchQuery({
+        queryKey: queryKeys.dashboard.summary(),
+        queryFn: () => api.get('/api/dashboard/summary').then((res) => res.data),
+        staleTime: 30 * 1000,
+      });
     }
-
-    preloadAdminPages();
-
-    void queryClient.prefetchQuery({
-      queryKey: queryKeys.dashboard.summary(),
-      queryFn: () => api.get('/api/dashboard/summary').then((res) => res.data),
-      staleTime: 30 * 1000,
-    });
-  }, []);
+  }, [isAuthenticated]);
 
   return (
     <QueryClientProvider client={queryClient}>

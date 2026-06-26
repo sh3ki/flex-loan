@@ -7,6 +7,7 @@ import {
   useMarkAllNotificationsAsReadMutation,
   useDeleteNotificationMutation,
 } from '../../queries/notification.queries';
+import { useAuthStore } from '../../store/auth.store';
 import { formatDistanceToNow } from 'date-fns';
 
 interface NotificationModalProps {
@@ -31,7 +32,8 @@ interface NotificationItem {
 }
 
 export function NotificationModal({ isOpen, onClose }: NotificationModalProps) {
-  const { data: notifications = [] } = useNotificationsQuery();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const { data: notifications = [] } = useNotificationsQuery(isAuthenticated);
   const markAsReadMutation = useMarkNotificationAsReadMutation();
   const markAllAsReadMutation = useMarkAllNotificationsAsReadMutation();
   const deleteNotificationMutation = useDeleteNotificationMutation();

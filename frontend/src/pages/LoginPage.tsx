@@ -38,6 +38,11 @@ export function LoginPage() {
       // Update auth store
       setAuth(response.user, response.accessToken);
 
+      // Check and create notifications for loan due dates
+      api.post('/api/notifications/check').catch((err) => {
+        console.error('Failed to check notifications:', err);
+      });
+
       // Preload dashboard data for faster load
       queryClient.prefetchQuery({
         queryKey: queryKeys.dashboard.summary(),

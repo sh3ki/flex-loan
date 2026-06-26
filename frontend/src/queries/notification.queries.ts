@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '../services/api';
 import { queryKeys } from './queryKeys';
 
-export const useNotificationsQuery = () => {
+export const useNotificationsQuery = (enabled = true) => {
   return useQuery({
     queryKey: queryKeys.notifications.list(),
     queryFn: async () => {
@@ -11,10 +11,11 @@ export const useNotificationsQuery = () => {
     },
     staleTime: 30 * 1000, // 30 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes
+    enabled,
   });
 };
 
-export const useUnreadNotificationsQuery = () => {
+export const useUnreadNotificationsQuery = (enabled = true) => {
   return useQuery({
     queryKey: queryKeys.notifications.unread(),
     queryFn: async () => {
@@ -23,10 +24,11 @@ export const useUnreadNotificationsQuery = () => {
     },
     staleTime: 30 * 1000,
     gcTime: 5 * 60 * 1000,
+    enabled,
   });
 };
 
-export const useUnreadCountQuery = () => {
+export const useUnreadCountQuery = (enabled = true) => {
   return useQuery({
     queryKey: queryKeys.notifications.unreadCount(),
     queryFn: async () => {
@@ -36,6 +38,7 @@ export const useUnreadCountQuery = () => {
     staleTime: 30 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchInterval: 60 * 1000, // Refetch every minute
+    enabled,
   });
 };
 
@@ -76,7 +79,7 @@ export const useMarkAllNotificationsAsReadMutation = () => {
 
   return useMutation({
     mutationFn: async () => {
-      const response = await apiClient.patch('/notifications/read-all');
+      const response = await apiClient.patch('/api/notifications/read-all');
       return response.data.data;
     },
     onSuccess: () => {

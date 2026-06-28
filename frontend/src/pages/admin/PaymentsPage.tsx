@@ -6,6 +6,7 @@ import { AddPaymentModal } from '../../components/features/payments/AddPaymentMo
 import { ViewPaymentModal } from '../../components/features/payments/ViewPaymentModal';
 import { EditPaymentModal } from '../../components/features/payments/EditPaymentModal';
 import { DeletePaymentModal } from '../../components/features/payments/DeletePaymentModal';
+import { TablePagination } from '../../components/common/TablePagination';
 import { useState, useEffect } from 'react';
 import { Trash2, Eye, Edit2, Plus } from 'lucide-react';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
@@ -14,6 +15,7 @@ import { useLocation } from 'react-router-dom';
 export function PaymentsPage() {
   const location = useLocation();
   const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState('');
   const [loanFilter, setLoanFilter] = useState('');
   const [creditorFilter, setCreditorFilter] = useState('');
@@ -24,7 +26,7 @@ export function PaymentsPage() {
   const [deletePaymentId, setDeletePaymentId] = useState<string | null>(null);
   const [selectedPaymentNumber, setSelectedPaymentNumber] = useState('');
   const debouncedSearch = useDebouncedValue(search, 350);
-  const { data, isLoading } = usePaymentsQuery(page, 10, debouncedSearch, loanFilter, creditorFilter);
+  const { data, isLoading } = usePaymentsQuery(page, rowsPerPage, debouncedSearch, loanFilter, creditorFilter, true);
   const { data: loansData } = useLoansQuery(1, 1000, '', 'active');
   const { data: creditorsData } = useCreditorsQuery(1, 1000, '', 'active');
 
@@ -207,6 +209,17 @@ export function PaymentsPage() {
               </tbody>
             </table>
           </div>
+
+          <TablePagination
+            page={page}
+            rowsPerPage={rowsPerPage}
+            totalItems={typeof data?.total === 'number' ? data.total : data?.data?.length || 0}
+            onPageChange={setPage}
+            onRowsPerPageChange={(rows) => {
+              setRowsPerPage(rows);
+              setPage(1);
+            }}
+          />
           </>
         )}
 

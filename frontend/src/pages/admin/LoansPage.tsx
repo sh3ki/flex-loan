@@ -5,6 +5,7 @@ import { AddLoanModal } from '../../components/features/loans/AddLoanModal';
 import { ViewLoanModal } from '../../components/features/loans/ViewLoanModal';
 import { EditLoanModal } from '../../components/features/loans/EditLoanModal';
 import { DeleteLoanModal } from '../../components/features/loans/DeleteLoanModal';
+import { TablePagination } from '../../components/common/TablePagination';
 import { useState } from 'react';
 import { Trash2, Eye, Edit2, Plus, Send } from 'lucide-react';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
@@ -23,6 +24,7 @@ function formatLoanStatus(status: string) {
 export function LoansPage() {
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('all');
   const [creditorId, setCreditorId] = useState('');
@@ -32,7 +34,7 @@ export function LoansPage() {
   const [deleteLoanId, setDeleteLoanId] = useState<string | null>(null);
   const [selectedLoanNumber, setSelectedLoanNumber] = useState('');
   const debouncedSearch = useDebouncedValue(search, 350);
-  const { data, isLoading, isError, error } = useLoansQuery(page, 10, debouncedSearch, status, creditorId);
+  const { data, isLoading, isError, error } = useLoansQuery(page, rowsPerPage, debouncedSearch, status, creditorId, true);
   const { data: creditorsData } = useCreditorsQuery(1, 1000, '', 'active');
 
   return (
@@ -273,6 +275,17 @@ export function LoansPage() {
               </tbody>
             </table>
           </div>
+
+          <TablePagination
+            page={page}
+            rowsPerPage={rowsPerPage}
+            totalItems={typeof data?.total === 'number' ? data.total : data?.data?.length || 0}
+            onPageChange={setPage}
+            onRowsPerPageChange={(rows) => {
+              setRowsPerPage(rows);
+              setPage(1);
+            }}
+          />
           </>
         )}
 

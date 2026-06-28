@@ -4,12 +4,14 @@ import { AddCreditorModal } from '../../components/features/creditors/AddCredito
 import { ViewCreditorModal } from '../../components/features/creditors/ViewCreditorModal';
 import { EditCreditorModal } from '../../components/features/creditors/EditCreditorModal';
 import { DeleteCreditorModal } from '../../components/features/creditors/DeleteCreditorModal';
+import { TablePagination } from '../../components/common/TablePagination';
 import { useState } from 'react';
 import { Trash2, Eye, Edit2, Plus } from 'lucide-react';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 
 export function CreditorsPage() {
   const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [search, setSearch] = useState('');
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [viewCreditorId, setViewCreditorId] = useState<string | null>(null);
@@ -17,7 +19,7 @@ export function CreditorsPage() {
   const [deleteCreditorId, setDeleteCreditorId] = useState<string | null>(null);
   const [selectedCreditorName, setSelectedCreditorName] = useState('');
   const debouncedSearch = useDebouncedValue(search, 350);
-  const { data, isLoading } = useCreditorsQuery(page, 10, debouncedSearch, 'active');
+  const { data, isLoading } = useCreditorsQuery(page, rowsPerPage, debouncedSearch, 'active', true);
 
   return (
     <AdminLayout>
@@ -167,27 +169,19 @@ export function CreditorsPage() {
               </tbody>
             </table>
           </div>
+
+          <TablePagination
+            page={page}
+            rowsPerPage={rowsPerPage}
+            totalItems={typeof data?.total === 'number' ? data.total : data?.data?.length || 0}
+            onPageChange={setPage}
+            onRowsPerPageChange={(rows) => {
+              setRowsPerPage(rows);
+              setPage(1);
+            }}
+          />
           </>
         )}
-
-        {/* Pagination */}
-        <div className="flex justify-center space-x-2">
-          <button
-            disabled={page === 1}
-            onClick={() => setPage(page - 1)}
-            className="rounded-lg border border-slate-300 px-4 py-2 disabled:opacity-50"
-          >
-            Previous
-          </button>
-          <span className="px-4 py-2 text-slate-700">Page {page}</span>
-          <button
-            disabled={!data?.hasMore}
-            onClick={() => setPage(page + 1)}
-            className="rounded-lg border border-slate-300 px-4 py-2 disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
 
         {/* Modals */}
         <AddCreditorModal isOpen={addModalOpen} onClose={() => setAddModalOpen(false)} />

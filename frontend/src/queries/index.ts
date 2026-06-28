@@ -12,11 +12,11 @@ const listQueryOptions = {
 } as const;
 
 // Creditor Queries
-export const useCreditorsQuery = (page = 1, limit = 10, search = '', status = 'active') => {
+export const useCreditorsQuery = (page = 1, limit = 10, search = '', status = 'active', includeTotal = false) => {
   return useQuery({
-    queryKey: queryKeys.creditors.list(page, limit, search, status),
+    queryKey: queryKeys.creditors.list(page, limit, search, status, includeTotal),
     queryFn: () =>
-      api.get('/api/creditors', { params: { page, limit, search, status } }).then((res) => res.data),
+      api.get('/api/creditors', { params: { page, limit, search, status, includeTotal } }).then((res) => res.data),
     ...listQueryOptions,
   });
 };
@@ -63,11 +63,11 @@ export const useDeleteCreditorMutation = () => {
 };
 
 // Loan Queries
-export const useLoansQuery = (page = 1, limit = 10, search = '', status = 'active', creditorId = '') => {
+export const useLoansQuery = (page = 1, limit = 10, search = '', status = 'active', creditorId = '', includeTotal = false) => {
   return useQuery({
-    queryKey: queryKeys.loans.list(page, limit, search, status, creditorId),
+    queryKey: queryKeys.loans.list(page, limit, search, status, creditorId, includeTotal),
     queryFn: () =>
-      api.get('/api/loans', { params: { page, limit, search, status, ...(creditorId && { creditorId }) } }).then((res) => res.data),
+      api.get('/api/loans', { params: { page, limit, search, status, includeTotal, ...(creditorId && { creditorId }) } }).then((res) => res.data),
     ...listQueryOptions,
   });
 };
@@ -134,11 +134,11 @@ export const useDeleteLoanMutation = () => {
 };
 
 // Payment Queries
-export const usePaymentsQuery = (page = 1, limit = 10, search = '', loanId = '', creditorId = '') => {
+export const usePaymentsQuery = (page = 1, limit = 10, search = '', loanId = '', creditorId = '', includeTotal = false) => {
   return useQuery({
-    queryKey: queryKeys.payments.list(page, limit, search, loanId, creditorId),
+    queryKey: queryKeys.payments.list(page, limit, search, loanId, creditorId, includeTotal),
     queryFn: () =>
-      api.get('/api/payments', { params: { page, limit, search, ...(loanId && { loanId }), ...(creditorId && { creditorId }) } }).then((res) => res.data),
+      api.get('/api/payments', { params: { page, limit, search, includeTotal, ...(loanId && { loanId }), ...(creditorId && { creditorId }) } }).then((res) => res.data),
     ...listQueryOptions,
   });
 };

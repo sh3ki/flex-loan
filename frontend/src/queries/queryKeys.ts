@@ -6,20 +6,20 @@ export const queryKeys = {
   all: baseKeys.query,
   creditors: {
     all: [...baseKeys.query, 'creditors'] as const,
-    list: (page: number, limit: number, search?: string, status?: string) =>
-      [...baseKeys.query, 'creditors', 'list', page, limit, search, status] as const,
+    list: (page: number, limit: number, search?: string, status?: string, includeTotal?: boolean) =>
+      [...baseKeys.query, 'creditors', 'list', page, limit, search, status, includeTotal] as const,
     detail: (id: string) => [...baseKeys.query, 'creditors', 'detail', id] as const,
   },
   loans: {
     all: [...baseKeys.query, 'loans'] as const,
-    list: (page: number, limit: number, search?: string, status?: string, creditorId?: string) =>
-      [...baseKeys.query, 'loans', 'list', page, limit, search, status, creditorId] as const,
+    list: (page: number, limit: number, search?: string, status?: string, creditorId?: string, includeTotal?: boolean) =>
+      [...baseKeys.query, 'loans', 'list', page, limit, search, status, creditorId, includeTotal] as const,
     detail: (id: string) => [...baseKeys.query, 'loans', 'detail', id] as const,
   },
   payments: {
     all: [...baseKeys.query, 'payments'] as const,
-    list: (page: number, limit: number, search?: string, loanId?: string, creditorId?: string) =>
-      [...baseKeys.query, 'payments', 'list', page, limit, search, loanId, creditorId] as const,
+    list: (page: number, limit: number, search?: string, loanId?: string, creditorId?: string, includeTotal?: boolean) =>
+      [...baseKeys.query, 'payments', 'list', page, limit, search, loanId, creditorId, includeTotal] as const,
     detail: (id: string) => [...baseKeys.query, 'payments', 'detail', id] as const,
   },
   dashboard: {

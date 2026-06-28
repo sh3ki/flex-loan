@@ -8,7 +8,7 @@ export const getCreditors = asyncHandler(async (req: Request, res: Response) => 
   const { page, limit, search, status, includeTotal } = req.query;
 
   const parsedPage = parsePositiveInt(page, 1);
-  const parsedLimit = clamp(parsePositiveInt(limit, 10), 1, 25);
+  const parsedLimit = clamp(parsePositiveInt(limit, 10), 1, 100);
   const parsedSearch = parseSearch(search);
   const parsedIncludeTotal = parseBoolean(includeTotal, false);
 

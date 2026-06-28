@@ -29,7 +29,7 @@ app.use(cookieParser());
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date() });
+  res.status(200).send('ok');
 });
 
 // Routes

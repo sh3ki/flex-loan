@@ -17,6 +17,7 @@ interface AddPaymentModalProps {
 interface Loan {
   id: string;
   loanNumber: string;
+  status: string;
   creditor: {
     firstName: string;
     lastName: string;
@@ -57,12 +58,19 @@ export function AddPaymentModal({ isOpen, onClose, preselectedLoanId }: AddPayme
     }
   }, [isOpen, preselectedLoanId, setValue]);
 
-  // Fetch loans - get all active loans
+  // Fetch loans - include active and overdue loans for payment recording
   const { data: loansData } = useQuery({
-    queryKey: ['loans', 'all-active'],
+    queryKey: ['loans', 'record-payment-options'],
     queryFn: () =>
-      api.get('/api/loans?limit=1000&status=Active').then((res) => res.data.data),
+      api.get('/api/loans?limit=1000&status=all').then((res) => res.data.data),
     enabled: isOpen,
+  });
+
+  const paymentLoanOptions = loansData?.filter((loan: Loan) => {
+    const normalizedStatus = (loan.status || '').toLowerCase();
+    const isPayableStatus = normalizedStatus === 'active' || normalizedStatus === 'overdue';
+    const hasRemainingBalance = Number(loan.remainingBalance) > 0;
+    return isPayableStatus && hasRemainingBalance;
   });
 
   // Get selected loan details
@@ -118,7 +126,7 @@ export function AddPaymentModal({ isOpen, onClose, preselectedLoanId }: AddPayme
             className="w-full rounded-lg border border-slate-300 px-4 py-2 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-200"
           >
             <option value="">Choose a loan...</option>
-            {loansData?.map((loan: Loan) => (
+            {paymentLoanOptions?.map((loan: Loan) => (
               <option key={loan.id} value={loan.id}>
                 {loan.loanNumber} - Borrower: {loan.creditor.firstName} {loan.creditor.lastName} - ₱{Number(loan.principal).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </option>

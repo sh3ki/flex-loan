@@ -17,10 +17,29 @@ export class LoanRepository {
     }
 
     if (search) {
+      const borrowerNameTerms = search
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+
       where.OR = [
         { loanNumber: { contains: search, mode: 'insensitive' } },
         { creditor: { firstName: { contains: search, mode: 'insensitive' } } },
+        { creditor: { middleName: { contains: search, mode: 'insensitive' } } },
         { creditor: { lastName: { contains: search, mode: 'insensitive' } } },
+        ...(borrowerNameTerms.length > 1
+          ? [
+              {
+                AND: borrowerNameTerms.map((term) => ({
+                  OR: [
+                    { creditor: { firstName: { contains: term, mode: 'insensitive' } } },
+                    { creditor: { middleName: { contains: term, mode: 'insensitive' } } },
+                    { creditor: { lastName: { contains: term, mode: 'insensitive' } } },
+                  ],
+                })),
+              },
+            ]
+          : []),
       ];
     }
 

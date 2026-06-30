@@ -101,22 +101,24 @@ export class PaymentRepository {
   }
 
   async getNextPaymentSequence(loanId: string): Promise<number> {
-    const lastPayment = await prisma.payment.findFirst({
-      where: { loanId, deletedAt: null },
-      orderBy: { createdAt: 'desc' },
+    // Include soft-deleted rows so we never reuse a globally unique payment number.
+    const payments = await prisma.payment.findMany({
+      where: { loanId },
+      select: { paymentNumber: true },
     });
 
-    if (!lastPayment) {
-      return 1;
+    let maxSequence = 0;
+    for (const payment of payments) {
+      const match = payment.paymentNumber.match(/^PAY-\d+-(\d+)$/i);
+      if (!match?.[1]) continue;
+
+      const sequence = parseInt(match[1], 10);
+      if (Number.isFinite(sequence) && sequence > maxSequence) {
+        maxSequence = sequence;
+      }
     }
 
-    // Extract sequence number from paymentNumber (format: PAY-001-001)
-    const match = lastPayment.paymentNumber.match(/PAY-\d+-(\d+)/);
-    if (match && match[1]) {
-      return parseInt(match[1], 10) + 1;
-    }
-
-    return 1;
+    return maxSequence + 1;
   }
 
   async create(userId: string, data: any) {

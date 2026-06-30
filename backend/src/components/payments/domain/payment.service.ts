@@ -6,6 +6,12 @@ import { calculateLoanStatus } from '../../loans/domain/loan.utils';
 import { prisma } from '../../../shared/utils/prisma.client';
 import { appCache, cacheKeys } from '../../../shared/utils/cache';
 
+const MONEY_EPSILON = 0.005;
+
+function normalizeMoney(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
 export class PaymentService {
   async getAll(userId: string, page: number, limit: number, search?: string, loanId?: string, creditorId?: string, includeTotal = false) {
     return paymentRepository.findAll(userId, page, limit, search, loanId, creditorId, includeTotal);
@@ -23,13 +29,15 @@ export class PaymentService {
 
   async create(userId: string, data: CreatePaymentDto) {
     // Validate input
-    if (data.amount <= 0) {
+    const paymentAmount = normalizeMoney(Number(data.amount));
+
+    if (paymentAmount <= 0) {
       throw new ApiError(400, 'Payment amount must be greater than 0');
     }
 
     // Check if loan exists
-    const loan = await prisma.loan.findUnique({
-      where: { id: data.loanId },
+    const loan = await prisma.loan.findFirst({
+      where: { id: data.loanId, userId, deletedAt: null },
     });
 
     if (!loan) {
@@ -37,8 +45,9 @@ export class PaymentService {
     }
 
     // Check if payment amount exceeds remaining balance
-    if (data.amount > Number(loan.remainingBalance)) {
-      throw new ApiError(400, `Payment amount cannot exceed remaining balance of ${loan.remainingBalance}`);
+    const remainingBalance = normalizeMoney(Number(loan.remainingBalance));
+    if (paymentAmount > remainingBalance + MONEY_EPSILON) {
+      throw new ApiError(400, `Payment amount cannot exceed remaining balance of ${remainingBalance.toFixed(2)}`);
     }
 
     // Get next payment sequence for this loan
@@ -48,7 +57,7 @@ export class PaymentService {
     // Create payment
     const payment = await paymentRepository.create(userId, {
       loanId: data.loanId,
-      amount: data.amount,
+      amount: paymentAmount,
       paymentDate: new Date(data.paymentDate),
       paymentMethod: data.paymentMethod,
       referenceNumber: data.referenceNumber,
@@ -57,8 +66,9 @@ export class PaymentService {
     });
 
     // Update loan with new payment
-    const newPaidAmount = Number(loan.paidAmount) + data.amount;
-    const newRemainingBalance = Number(loan.totalPayable) - newPaidAmount;
+    const newPaidAmount = normalizeMoney(Number(loan.paidAmount) + paymentAmount);
+    const rawRemainingBalance = normalizeMoney(Number(loan.totalPayable) - newPaidAmount);
+    const newRemainingBalance = Math.abs(rawRemainingBalance) <= MONEY_EPSILON ? 0 : rawRemainingBalance;
     const newStatus = calculateLoanStatus(newRemainingBalance, loan.dueDate, newPaidAmount);
 
     await prisma.loan.update({
@@ -83,8 +93,8 @@ export class PaymentService {
       throw new ApiError(404, 'Payment not found');
     }
 
-    const loan = await prisma.loan.findUnique({
-      where: { id: payment.loanId },
+    const loan = await prisma.loan.findFirst({
+      where: { id: payment.loanId, userId, deletedAt: null },
     });
 
     if (!loan) {
@@ -93,12 +103,13 @@ export class PaymentService {
 
     // Calculate difference in payment amount
     const oldAmount = Number(payment.amount);
-    const newAmount = data.amount ?? oldAmount;
-    const difference = newAmount - oldAmount;
+    const newAmount = normalizeMoney(data.amount ?? oldAmount);
+    const difference = normalizeMoney(newAmount - oldAmount);
 
     // Check if new payment would exceed remaining balance
-    if (difference > 0 && newAmount > Number(loan.remainingBalance) + oldAmount) {
-      throw new ApiError(400, `Payment amount cannot exceed remaining balance`);
+    const remainingBalance = normalizeMoney(Number(loan.remainingBalance));
+    if (difference > 0 && newAmount > remainingBalance + oldAmount + MONEY_EPSILON) {
+      throw new ApiError(400, 'Payment amount cannot exceed remaining balance');
     }
 
     const updateData: any = {};
@@ -112,8 +123,9 @@ export class PaymentService {
 
     // Update loan if amount changed
     if (difference !== 0) {
-      const newPaidAmount = Number(loan.paidAmount) + difference;
-      const newRemainingBalance = Number(loan.totalPayable) - newPaidAmount;
+      const newPaidAmount = normalizeMoney(Number(loan.paidAmount) + difference);
+      const rawRemainingBalance = normalizeMoney(Number(loan.totalPayable) - newPaidAmount);
+      const newRemainingBalance = Math.abs(rawRemainingBalance) <= MONEY_EPSILON ? 0 : rawRemainingBalance;
       const newStatus = calculateLoanStatus(newRemainingBalance, loan.dueDate, newPaidAmount);
 
       await prisma.loan.update({
@@ -140,8 +152,8 @@ export class PaymentService {
       throw new ApiError(404, 'Payment not found');
     }
 
-    const loan = await prisma.loan.findUnique({
-      where: { id: payment.loanId },
+    const loan = await prisma.loan.findFirst({
+      where: { id: payment.loanId, userId, deletedAt: null },
     });
 
     if (!loan) {
@@ -149,8 +161,9 @@ export class PaymentService {
     }
 
     // Reverse the payment
-    const newPaidAmount = Number(loan.paidAmount) - Number(payment.amount);
-    const newRemainingBalance = Number(loan.totalPayable) - newPaidAmount;
+    const newPaidAmount = normalizeMoney(Number(loan.paidAmount) - Number(payment.amount));
+    const rawRemainingBalance = normalizeMoney(Number(loan.totalPayable) - newPaidAmount);
+    const newRemainingBalance = Math.abs(rawRemainingBalance) <= MONEY_EPSILON ? 0 : rawRemainingBalance;
     const newStatus = calculateLoanStatus(newRemainingBalance, loan.dueDate, newPaidAmount);
 
     await prisma.loan.update({
